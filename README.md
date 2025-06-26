@@ -1,4 +1,4 @@
-# 💕 Cartas de Amor - Love Letters Manager
+# 💕 Private Love Notes
 
 Una apl## 🚀 Instalación y Desarrollo
 
