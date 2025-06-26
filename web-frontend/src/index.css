@@ -1,0 +1,259 @@
+/* Estilos base temporales hasta instalar Tailwind */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Playfair Display', serif;
+  background: linear-gradient(135deg, #fdf2f8, #fce7f3);
+  min-height: 100vh;
+}
+
+/* Clases utilitarias básicas */
+.btn-romantic {
+  background: linear-gradient(to right, #ec4899, #f472b6);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-romantic:hover {
+  background: linear-gradient(to right, #db2777, #ec4899);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-outline-romantic {
+  border: 2px solid #ec4899;
+  color: #db2777;
+  background: transparent;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-romantic:hover {
+  background: #ec4899;
+  color: white;
+}
+
+.card-romantic {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(236, 72, 153, 0.1);
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.card-romantic:hover {
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.input-romantic {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #f8bbd9;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.input-romantic:focus {
+  outline: none;
+  border-color: #ec4899;
+}
+
+.textarea-romantic {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #f8bbd9;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+  resize: none;
+  font-family: inherit;
+}
+
+.textarea-romantic:focus {
+  outline: none;
+  border-color: #ec4899;
+}
+
+/* Clases de layout básicas */
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.space-x-2 > * + * {
+  margin-left: 8px;
+}
+
+.space-x-3 > * + * {
+  margin-left: 12px;
+}
+
+.space-x-4 > * + * {
+  margin-left: 16px;
+}
+
+.space-y-6 > * + * {
+  margin-top: 24px;
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.gap-6 {
+  gap: 24px;
+}
+
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.mb-8 { margin-bottom: 32px; }
+
+.px-4 { padding-left: 16px; padding-right: 16px; }
+.py-2 { padding-top: 8px; padding-bottom: 8px; }
+.py-3 { padding-top: 12px; padding-bottom: 12px; }
+.py-6 { padding-top: 24px; padding-bottom: 24px; }
+.py-8 { padding-top: 32px; padding-bottom: 32px; }
+.py-12 { padding-top: 48px; padding-bottom: 48px; }
+
+.text-center { text-align: center; }
+.text-sm { font-size: 14px; }
+.text-xl { font-size: 20px; }
+.text-2xl { font-size: 24px; }
+.text-3xl { font-size: 30px; }
+
+.font-medium { font-weight: 500; }
+.font-bold { font-weight: 700; }
+
+.font-romantic {
+  font-family: 'Dancing Script', cursive;
+}
+
+.text-gray-500 { color: #6b7280; }
+.text-gray-600 { color: #4b5563; }
+.text-gray-700 { color: #374151; }
+.text-gray-800 { color: #1f2937; }
+.text-red-500 { color: #ef4444; }
+.text-red-700 { color: #b91c1c; }
+.text-pink-300 { color: #f9a8d4; }
+.text-pink-700 { color: #be185d; }
+
+.bg-white { background-color: white; }
+.bg-pink-100 { background-color: #fce7f3; }
+
+.border-b { border-bottom: 1px solid #e5e7eb; }
+.border-pink-200 { border-color: #fbcfe8; }
+
+.shadow-lg { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); }
+
+.backdrop-blur-sm { backdrop-filter: blur(4px); }
+
+.max-w-6xl { max-width: 72rem; }
+.max-w-md { max-width: 28rem; }
+.max-w-2xl { max-width: 42rem; }
+
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+.w-5 { width: 20px; }
+.w-8 { width: 32px; }
+.w-24 { width: 96px; }
+.h-5 { height: 20px; }
+.h-8 { height: 32px; }
+.h-24 { height: 96px; }
+.h-64 { height: 256px; }
+
+.min-h-screen { min-height: 100vh; }
+
+.relative { position: relative; }
+.absolute { position: absolute; }
+.fixed { position: fixed; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+
+.z-50 { z-index: 50; }
+
+.opacity-0 { opacity: 0; }
+
+.transition-opacity { transition: opacity 0.3s ease; }
+.transition-colors { transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease; }
+.transition-all { transition: all 0.3s ease; }
+
+.cursor-pointer { cursor: pointer; }
+
+.overflow-y-auto { overflow-y: auto; }
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rounded { border-radius: 4px; }
+.rounded-full { border-radius: 9999px; }
+.rounded-2xl { border-radius: 16px; }
+
+.top-1\/2 { top: 50%; }
+.left-3 { left: 12px; }
+.transform { transform: translateX(var(--tw-translate-x)) translateY(var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)); }
+.-translate-y-1\/2 { --tw-translate-y: -50%; }
+
+.pl-10 { padding-left: 40px; }
+
+.group:hover .group-hover\:opacity-100 { opacity: 1; }
+
+.p-1 { padding: 4px; }
+.p-2 { padding: 8px; }
+
+.flex-1 { flex: 1; }
+
+.max-h-\[90vh\] { max-height: 90vh; }
+
+.fill-current { fill: currentColor; }
+
+.inline-block { display: inline-block; }
+
+.pt-4 { padding-top: 16px; }
+
+/* Responsive */
+@media (min-width: 768px) {
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md\:gap-4 { gap: 16px; }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

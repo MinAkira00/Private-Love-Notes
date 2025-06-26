@@ -1,0 +1,36 @@
+{
+  "folders": [
+    {
+      "name": "🌐 Web Frontend",
+      "path": "./web-frontend"
+    },
+    {
+      "name": "⚡ Backend API",
+      "path": "./backend"
+    },
+    {
+      "name": "📱 Mobile App",
+      "path": "./mobile-app"
+    },
+    {
+      "name": "🖥️ Desktop App", 
+      "path": "./desktop-app"
+    },
+    {
+      "name": "🔗 Shared",
+      "path": "./shared"
+    }
+  ],
+  "settings": {
+    "typescript.preferences.include.packageJsonAutoImports": "auto"
+  },
+  "extensions": {
+    "recommendations": [
+      "bradlc.vscode-tailwindcss",
+      "esbenp.prettier-vscode",
+      "ms-vscode.vscode-typescript-next",
+      "formulahendry.auto-rename-tag",
+      "ms-vscode.vscode-json"
+    ]
+  }
+}
