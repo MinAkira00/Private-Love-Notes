@@ -5,7 +5,7 @@ API RESTful para gestionar cartas de amor con sincronización entre dispositivos
 ## 🛠️ Tecnologías
 - **Node.js** - Runtime
 - **Express** - Framework web
-- **MongoDB** - Base de datos
+- **SQL Lite** - Base de datos
 - **JWT** - Autenticación
 - **Bcrypt** - Encriptación de contraseñas
 - **Multer** - Upload de archivos

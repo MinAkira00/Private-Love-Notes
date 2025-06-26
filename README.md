@@ -1,6 +1,31 @@
 # 💕 Private Love Notes
 
-Una apl## 🚀 Instalación y Desarrollo
+Una aplicación multiplataforma para escribir, gestionar y compartir cartas de amor entre parejas.
+
+## 🎯 Características Actuales
+
+### ✅ **Backend Completo con SQLite**
+- **API REST** completa con Express.js
+- **Base de datos SQLite** con better-sqlite3
+- **Validaciones** robustas con express-validator
+- **Seguridad** con helmet, rate limiting y CORS
+- **Filtros avanzados** por categoría, estado de ánimo, favoritas
+- **Búsqueda** en título, contenido y etiquetas
+
+### ✅ **Frontend Web Funcional**
+- **React + Vite + Tailwind CSS**
+- **Sistema de usuarios** (Pollito y Princesita)
+- **Diseño romántico** y responsive
+- **Almacenamiento híbrido** (local + backend)
+- **Categorías** y estados de ánimo
+- **Filtros dinámicos** y búsqueda en tiempo real
+
+### 📊 **Estado de la Base de Datos**
+- 🗄️ **SQLite**: `backend/src/database/letters.db` (se crea automáticamente)
+- 📝 **Estructura**: ID, título, contenido, autor, destinatario, categoría, estado de ánimo, etiquetas, favorita, fechas
+- 🔄 **Migración**: Completada de archivos JSON a SQLite
+
+## 🚀 Instalación y Desarrollo
 
 ### ✅ Web Frontend (LISTO)
 ```bash
