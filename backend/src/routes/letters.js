@@ -1,43 +1,58 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import db from '../database/db.js';
 
 const router = express.Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const dataFile = join(__dirname, '..', 'data', 'letters.json');
 
-// Función para leer cartas desde archivo
-const readLetters = () => {
-  try {
-    if (!existsSync(dataFile)) {
-      return [];
-    }
-    const data = readFileSync(dataFile, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error leyendo cartas:', error);
-    return [];
+// Preparar statements para mejor rendimiento
+const statements = {
+  getAllLetters: db.prepare('SELECT * FROM letters ORDER BY createdAt DESC'),
+  getLetterById: db.prepare('SELECT * FROM letters WHERE id = ?'),
+  insertLetter: db.prepare(`
+    INSERT INTO letters (id, title, content, recipient, author, category, mood, tags, isFavorite, createdAt, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `),
+  updateLetter: db.prepare(`
+    UPDATE letters 
+    SET title = ?, content = ?, recipient = ?, author = ?, category = ?, mood = ?, tags = ?, updatedAt = ?
+    WHERE id = ?
+  `),
+  toggleFavorite: db.prepare(`
+    UPDATE letters 
+    SET isFavorite = ?, updatedAt = ?
+    WHERE id = ?
+  `),
+  deleteLetter: db.prepare('DELETE FROM letters WHERE id = ?'),
+  getFilteredLetters: {
+    byCategory: db.prepare('SELECT * FROM letters WHERE category = ? ORDER BY createdAt DESC'),
+    byMood: db.prepare('SELECT * FROM letters WHERE mood = ? ORDER BY createdAt DESC'),
+    byFavorite: db.prepare('SELECT * FROM letters WHERE isFavorite = ? ORDER BY createdAt DESC'),
+    byRecipient: db.prepare('SELECT * FROM letters WHERE recipient LIKE ? ORDER BY createdAt DESC')
   }
 };
 
-// Función para guardar cartas en archivo
-const saveLetters = (letters) => {
-  try {
-    // Crear directorio si no existe
-    const dataDir = dirname(dataFile);
-    if (!existsSync(dataDir)) {
-      import('fs').then(fs => fs.mkdirSync(dataDir, { recursive: true }));
-    }
-    
-    writeFileSync(dataFile, JSON.stringify(letters, null, 2), 'utf-8');
-    return true;
-  } catch (error) {
-    console.error('Error guardando cartas:', error);
-    return false;
-  }
+// Función para convertir row de SQLite a objeto JavaScript
+const formatLetter = (row) => {
+  if (!row) return null;
+  return {
+    ...row,
+    tags: JSON.parse(row.tags || '[]'),
+    isFavorite: Boolean(row.isFavorite)
+  };
+};
+
+// Función para filtrar cartas con búsqueda de texto
+const searchLetters = (searchTerm) => {
+  const searchPattern = `%${searchTerm.toLowerCase()}%`;
+  const searchQuery = `
+    SELECT * FROM letters 
+    WHERE LOWER(title) LIKE ? 
+       OR LOWER(content) LIKE ? 
+       OR LOWER(recipient) LIKE ?
+       OR LOWER(tags) LIKE ?
+    ORDER BY createdAt DESC
+  `;
+  return db.prepare(searchQuery).all(searchPattern, searchPattern, searchPattern, searchPattern);
 };
 
 // Generar ID único
@@ -78,46 +93,49 @@ const letterValidation = [
 // GET /api/letters - Obtener todas las cartas
 router.get('/', (req, res) => {
   try {
-    const letters = readLetters();
     const { category, mood, isFavorite, recipient, search } = req.query;
+    let letters;
     
-    let filteredLetters = letters;
+    // Si hay búsqueda de texto, usar función especializada
+    if (search) {
+      letters = searchLetters(search);
+    }
+    // Filtros específicos
+    else if (category) {
+      letters = statements.getFilteredLetters.byCategory.all(category);
+    }
+    else if (mood) {
+      letters = statements.getFilteredLetters.byMood.all(mood);
+    }
+    else if (isFavorite !== undefined) {
+      const favoriteValue = isFavorite === 'true' ? 1 : 0;
+      letters = statements.getFilteredLetters.byFavorite.all(favoriteValue);
+    }
+    else if (recipient) {
+      letters = statements.getFilteredLetters.byRecipient.all(`%${recipient.toLowerCase()}%`);
+    }
+    else {
+      letters = statements.getAllLetters.all();
+    }
     
-    // Filtrar por categoría
-    if (category) {
+    // Formatear las cartas y aplicar filtros adicionales si es necesario
+    let filteredLetters = letters.map(formatLetter);
+    
+    // Aplicar filtros adicionales si hay múltiples parámetros
+    if (category && (mood || isFavorite !== undefined || recipient)) {
       filteredLetters = filteredLetters.filter(letter => letter.category === category);
     }
-    
-    // Filtrar por estado de ánimo
-    if (mood) {
+    if (mood && (isFavorite !== undefined || recipient)) {
       filteredLetters = filteredLetters.filter(letter => letter.mood === mood);
     }
-    
-    // Filtrar por favoritas
-    if (isFavorite !== undefined) {
+    if (isFavorite !== undefined && recipient) {
       filteredLetters = filteredLetters.filter(letter => letter.isFavorite === (isFavorite === 'true'));
     }
-    
-    // Filtrar por destinatario
-    if (recipient) {
+    if (recipient && !search) {
       filteredLetters = filteredLetters.filter(letter => 
         letter.recipient.toLowerCase().includes(recipient.toLowerCase())
       );
     }
-    
-    // Búsqueda de texto
-    if (search) {
-      const searchTerm = search.toLowerCase();
-      filteredLetters = filteredLetters.filter(letter => 
-        letter.title.toLowerCase().includes(searchTerm) ||
-        letter.content.toLowerCase().includes(searchTerm) ||
-        letter.recipient.toLowerCase().includes(searchTerm) ||
-        letter.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-      );
-    }
-    
-    // Ordenar por fecha de creación (más recientes primero)
-    filteredLetters.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
     res.json({
       success: true,
@@ -125,6 +143,7 @@ router.get('/', (req, res) => {
       data: filteredLetters
     });
   } catch (error) {
+    console.error('Error obteniendo cartas:', error);
     res.status(500).json({
       success: false,
       error: 'Error obteniendo cartas',
@@ -136,8 +155,8 @@ router.get('/', (req, res) => {
 // GET /api/letters/:id - Obtener una carta específica
 router.get('/:id', (req, res) => {
   try {
-    const letters = readLetters();
-    const letter = letters.find(l => l.id === req.params.id);
+    const row = statements.getLetterById.get(req.params.id);
+    const letter = formatLetter(row);
     
     if (!letter) {
       return res.status(404).json({
@@ -151,6 +170,7 @@ router.get('/:id', (req, res) => {
       data: letter
     });
   } catch (error) {
+    console.error('Error obteniendo carta:', error);
     res.status(500).json({
       success: false,
       error: 'Error obteniendo carta',
@@ -171,31 +191,51 @@ router.post('/', letterValidation, (req, res) => {
       });
     }
     
-    const letters = readLetters();
     const newLetter = {
       id: generateId(),
-      ...req.body,
-      tags: req.body.tags || [],
-      isFavorite: false,
+      title: req.body.title,
+      content: req.body.content,
+      recipient: req.body.recipient,
+      author: req.body.author,
+      category: req.body.category,
+      mood: req.body.mood,
+      tags: JSON.stringify(req.body.tags || []),
+      isFavorite: 0, // SQLite boolean como integer
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
     
-    letters.unshift(newLetter); // Agregar al inicio
+    const result = statements.insertLetter.run(
+      newLetter.id,
+      newLetter.title,
+      newLetter.content,
+      newLetter.recipient,
+      newLetter.author,
+      newLetter.category,
+      newLetter.mood,
+      newLetter.tags,
+      newLetter.isFavorite,
+      newLetter.createdAt,
+      newLetter.updatedAt
+    );
     
-    if (saveLetters(letters)) {
+    if (result.changes > 0) {
+      // Obtener la carta recién insertada con formato correcto
+      const insertedLetter = formatLetter(statements.getLetterById.get(newLetter.id));
+      
       res.status(201).json({
         success: true,
         message: 'Carta creada exitosamente',
-        data: newLetter
+        data: insertedLetter
       });
     } else {
       res.status(500).json({
         success: false,
-        error: 'Error guardando carta'
+        error: 'Error insertando carta en la base de datos'
       });
     }
   } catch (error) {
+    console.error('Error creando carta:', error);
     res.status(500).json({
       success: false,
       error: 'Error creando carta',
@@ -216,25 +256,32 @@ router.put('/:id', letterValidation, (req, res) => {
       });
     }
     
-    const letters = readLetters();
-    const letterIndex = letters.findIndex(l => l.id === req.params.id);
-    
-    if (letterIndex === -1) {
+    // Verificar que la carta existe
+    const existingLetter = statements.getLetterById.get(req.params.id);
+    if (!existingLetter) {
       return res.status(404).json({
         success: false,
         error: 'Carta no encontrada'
       });
     }
     
-    const updatedLetter = {
-      ...letters[letterIndex],
-      ...req.body,
-      updatedAt: new Date().toISOString()
-    };
+    const updatedAt = new Date().toISOString();
+    const result = statements.updateLetter.run(
+      req.body.title,
+      req.body.content,
+      req.body.recipient,
+      req.body.author,
+      req.body.category,
+      req.body.mood,
+      JSON.stringify(req.body.tags || []),
+      updatedAt,
+      req.params.id
+    );
     
-    letters[letterIndex] = updatedLetter;
-    
-    if (saveLetters(letters)) {
+    if (result.changes > 0) {
+      // Obtener la carta actualizada
+      const updatedLetter = formatLetter(statements.getLetterById.get(req.params.id));
+      
       res.json({
         success: true,
         message: 'Carta actualizada exitosamente',
@@ -243,10 +290,11 @@ router.put('/:id', letterValidation, (req, res) => {
     } else {
       res.status(500).json({
         success: false,
-        error: 'Error guardando carta'
+        error: 'Error actualizando carta'
       });
     }
   } catch (error) {
+    console.error('Error actualizando carta:', error);
     res.status(500).json({
       success: false,
       error: 'Error actualizando carta',
@@ -258,24 +306,32 @@ router.put('/:id', letterValidation, (req, res) => {
 // PATCH /api/letters/:id/favorite - Toggle favorita
 router.patch('/:id/favorite', (req, res) => {
   try {
-    const letters = readLetters();
-    const letterIndex = letters.findIndex(l => l.id === req.params.id);
-    
-    if (letterIndex === -1) {
+    // Verificar que la carta existe
+    const existingLetter = formatLetter(statements.getLetterById.get(req.params.id));
+    if (!existingLetter) {
       return res.status(404).json({
         success: false,
         error: 'Carta no encontrada'
       });
     }
     
-    letters[letterIndex].isFavorite = !letters[letterIndex].isFavorite;
-    letters[letterIndex].updatedAt = new Date().toISOString();
+    const newFavoriteValue = existingLetter.isFavorite ? 0 : 1;
+    const updatedAt = new Date().toISOString();
     
-    if (saveLetters(letters)) {
+    const result = statements.toggleFavorite.run(
+      newFavoriteValue,
+      updatedAt,
+      req.params.id
+    );
+    
+    if (result.changes > 0) {
+      // Obtener la carta actualizada
+      const updatedLetter = formatLetter(statements.getLetterById.get(req.params.id));
+      
       res.json({
         success: true,
-        message: `Carta ${letters[letterIndex].isFavorite ? 'marcada como' : 'removida de'} favorita`,
-        data: letters[letterIndex]
+        message: `Carta ${updatedLetter.isFavorite ? 'marcada como' : 'removida de'} favorita`,
+        data: updatedLetter
       });
     } else {
       res.status(500).json({
@@ -284,6 +340,7 @@ router.patch('/:id/favorite', (req, res) => {
       });
     }
   } catch (error) {
+    console.error('Error actualizando favorita:', error);
     res.status(500).json({
       success: false,
       error: 'Error actualizando favorita',
@@ -295,23 +352,23 @@ router.patch('/:id/favorite', (req, res) => {
 // DELETE /api/letters/:id - Eliminar carta
 router.delete('/:id', (req, res) => {
   try {
-    const letters = readLetters();
-    const letterIndex = letters.findIndex(l => l.id === req.params.id);
+    // Obtener la carta antes de eliminarla para devolver sus datos
+    const letterToDelete = formatLetter(statements.getLetterById.get(req.params.id));
     
-    if (letterIndex === -1) {
+    if (!letterToDelete) {
       return res.status(404).json({
         success: false,
         error: 'Carta no encontrada'
       });
     }
     
-    const deletedLetter = letters.splice(letterIndex, 1)[0];
+    const result = statements.deleteLetter.run(req.params.id);
     
-    if (saveLetters(letters)) {
+    if (result.changes > 0) {
       res.json({
         success: true,
         message: 'Carta eliminada exitosamente',
-        data: deletedLetter
+        data: letterToDelete
       });
     } else {
       res.status(500).json({
@@ -320,6 +377,7 @@ router.delete('/:id', (req, res) => {
       });
     }
   } catch (error) {
+    console.error('Error eliminando carta:', error);
     res.status(500).json({
       success: false,
       error: 'Error eliminando carta',
@@ -331,7 +389,8 @@ router.delete('/:id', (req, res) => {
 // GET /api/letters/stats - Obtener estadísticas
 router.get('/stats/summary', (req, res) => {
   try {
-    const letters = readLetters();
+    // Obtener todas las cartas para calcular estadísticas
+    const letters = statements.getAllLetters.all().map(formatLetter);
     
     const stats = {
       total: letters.length,
@@ -347,7 +406,7 @@ router.get('/stats/summary', (req, res) => {
       byRecipient: {}
     };
     
-    // Estadísticas por categoría
+    // Estadísticas por categoría, estado de ánimo y destinatario
     letters.forEach(letter => {
       stats.byCategory[letter.category] = (stats.byCategory[letter.category] || 0) + 1;
       stats.byMood[letter.mood] = (stats.byMood[letter.mood] || 0) + 1;
@@ -359,6 +418,7 @@ router.get('/stats/summary', (req, res) => {
       data: stats
     });
   } catch (error) {
+    console.error('Error obteniendo estadísticas:', error);
     res.status(500).json({
       success: false,
       error: 'Error obteniendo estadísticas',
